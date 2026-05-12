@@ -1,138 +1,177 @@
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>도림고 송도 체험학습 빙고</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; overflow-x: hidden; }
+        
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #f1f5f9; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
         
         /* 시작 화면 레이어 */
         #loginOverlay {
             position: fixed; inset: 0; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            z-index: 100; display: flex; align-items: center; justify-content: center; padding: 2rem;
+            z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
         }
 
-        /* 빙고판 스타일 */
-        .bingo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .bingo-cell { aspect-ratio: 1 / 1; perspective: 1000px; }
+        .bingo-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px; 
+            width: 100%;
+        }
+        
+        .bingo-cell { 
+            aspect-ratio: 1 / 1; 
+            perspective: 1000px; 
+            min-width: 0; /* 그리드 붕괴 방지 */
+        }
+
         .cell-inner { 
             position: relative; width: 100%; height: 100%; text-align: center; 
-            transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+            transform-style: preserve-3d; cursor: pointer;
         }
-        .cell-inner.is-flipped { transform: rotateY(180deg); }
-        .cell-front, .cell-back {
-            position: absolute; width: 100%; height: 100%; backface<!DOCTYPE html>
--visibility: hidden;
-            display: flex; align-items: center; justify-content: center; padding: 8px;
-            border-radius: 16px; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            font-size: 0.8rem; font-weight: bold; word-break: keep-all;
-        }
-        .cell-front { background-color: #fff; color: #1e293b; }
-        .cell-back { background-color: #10b981; color: #fff; transform: rotateY(180deg); }
-        .cell-completed .cell-front { background-color: #ecfdf5; color: #065f46; border-color: #34d399; }
         
-        .type-quiz { border-top: 5px solid #f43f5e; }
-        .type-mission { border-top: 5px solid #0ea5e9; }
+        .cell-inner.is-flipped { transform: rotateY(180deg); }
+        
+        .cell-front, .cell-back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 4px; border-radius: 12px; border: 1.5px solid #fff; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            word-break: keep-all;
+        }
 
-        /* 결과 스크린샷용 모달 */
+        /* 모바일 텍스트 크기 최적화 */
+        .cell-front { 
+            background-color: #fff; 
+            color: #1e293b; 
+            font-size: clamp(0.65rem, 2.5vw, 0.85rem); 
+            font-weight: 700;
+        }
+        
+        .cell-back { 
+            background-color: #10b981; 
+            color: #fff; 
+            transform: rotateY(180deg); 
+        }
+
+        .cell-completed .cell-front { 
+            background-color: #ecfdf5; 
+            color: #065f46; 
+            border-color: #34d399; 
+        }
+        
+        .type-quiz { border-top: 4px solid #f43f5e; }
+        .type-mission { border-top: 4px solid #0ea5e9; }
+
         #screenshotModal {
             display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9);
-            z-index: 200; align-items: center; justify-content: center; padding: 1.5rem;
+            z-index: 200; align-items: center; justify-content: center; padding: 1.25rem;
+        }
+
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
     </style>
 </head>
 <body class="p-4 max-w-md mx-auto">
 
-    <!-- 1. 시작 화면: 이름 입력 -->
     <div id="loginOverlay">
-        <div class="w-full bg-white rounded-[2.5rem] p-8 shadow-2xl text-center">
+        <div class="w-full bg-white rounded-[2rem] p-6 shadow-2xl text-center">
             <div class="mb-6">
                 <span class="text-4xl">🏢</span>
                 <h1 class="text-2xl font-black text-slate-800 mt-2">도림고 송도 미션</h1>
-                <p class="text-slate-500 text-sm">이름과 학번을 입력하세요</p>
+                <p class="text-slate-500 text-sm">본인의 이름과 학번을 입력하세요</p>
             </div>
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <input type="text" id="userClass" placeholder="학번 (예: 10101)" 
-                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg">
+                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg transition-all">
                 <input type="text" id="userName" placeholder="이름 (예: 홍길동)" 
-                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg">
+                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg transition-all">
                 <button onclick="startApp()" 
-                    class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-95 transition-transform">
+                    class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-blue-100 active:scale-95 transition-transform">
                     빙고 시작하기
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 2. 메인 화면 -->
-    <header class="mb-6">
-        <div class="flex justify-between items-end mb-4">
+    <header class="mb-5">
+        <div class="flex justify-between items-end mb-4 px-1">
             <div>
-                <p class="text-blue-600 font-bold text-sm">2026 현장체험학습</p>
-                <h2 id="displayUser" class="text-2xl font-black text-slate-800">로딩 중...</h2>
+                <p class="text-blue-600 font-bold text-xs">2026 현장체험학습</p>
+                <h2 id="displayUser" class="text-xl font-black text-slate-800">로딩 중...</h2>
             </div>
             <div class="text-right">
                 <span id="bingoCountTop" class="text-3xl font-black text-rose-500">0</span>
-                <span class="text-xs font-bold text-slate-400 block uppercase">Bingos</span>
+                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-tighter">Bingos</span>
             </div>
         </div>
         
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex justify-between items-center">
-            <div class="flex gap-4">
-                <div class="flex items-center text-[11px] font-bold text-slate-400">
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200 flex justify-between items-center">
+            <div class="flex gap-3">
+                <div class="flex items-center text-[10px] font-bold text-slate-400">
                     <span class="w-2 h-2 bg-rose-500 rounded-full mr-1.5"></span> 퀴즈
                 </div>
-                <div class="flex items-center text-[11px] font-bold text-slate-400">
+                <div class="flex items-center text-[10px] font-bold text-slate-400">
                     <span class="w-2 h-2 bg-sky-500 rounded-full mr-1.5"></span> 활동
                 </div>
             </div>
-            <p class="text-sm font-bold text-slate-600">성공: <span id="doneCount" class="text-emerald-500">0</span>/16</p>
+            <p class="text-xs font-bold text-slate-600">완료: <span id="doneCount" class="text-emerald-500">0</span>/16</p>
         </div>
     </header>
 
     <div class="bingo-grid" id="bingoBoard"></div>
 
-    <button onclick="showScreenshot()" class="mt-8 w-full py-4 bg-slate-800 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-transform">
-        📸 최종 인증화면 만들기 (캡처용)
+    <button onclick="showScreenshot()" class="mt-6 w-full py-4 bg-slate-800 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
+        <span>📸</span> 최종 인증화면 (캡처용)
     </button>
 
-    <!-- 3. 문제 풀이 모달 -->
     <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl">
+        <div class="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl">
             <div id="modalContent"></div>
-            <button onclick="closeModal()" class="mt-8 w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold text-xs">나중에 하기</button>
+            <button id="modalCloseBtn" onclick="closeModal()" class="mt-4 w-full py-3 bg-slate-50 text-slate-400 rounded-xl font-bold text-xs">나중에 하기</button>
         </div>
     </div>
 
-    <!-- 4. 결과 인증 모달 (스크린샷용) -->
     <div id="screenshotModal">
-        <div class="bg-white rounded-[3rem] w-full max-w-sm p-10 text-center relative overflow-hidden">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-8 text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-rose-500"></div>
-            <div class="mb-8">
-                <p class="text-blue-600 font-black tracking-widest text-sm mb-2">MISSION COMPLETE</p>
-                <h3 id="resultName" class="text-3xl font-black text-slate-800 mb-1">10101 홍길동</h3>
-                <p class="text-slate-400 text-sm">도림고등학교 현장체험학습</p>
+            <div class="mb-6">
+                <p class="text-blue-600 font-black tracking-widest text-[10px] mb-1">MISSION COMPLETE</p>
+                <h3 id="resultName" class="text-2xl font-black text-slate-800 mb-1">학번 이름</h3>
+                <p class="text-slate-400 text-xs">도림고등학교 현장체험학습</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-slate-50 rounded-3xl p-6">
-                    <p class="text-xs font-bold text-slate-400 mb-1">빙고 달성</p>
-                    <p id="resultBingo" class="text-4xl font-black text-rose-500">0</p>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-slate-50 rounded-2xl p-4">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1">빙고 달성</p>
+                    <p id="resultBingo" class="text-3xl font-black text-rose-500">0</p>
                 </div>
-                <div class="bg-slate-50 rounded-3xl p-6">
-                    <p class="text-xs font-bold text-slate-400 mb-1">미션 완료</p>
-                    <p id="resultDone" class="text-4xl font-black text-emerald-500">0</p>
+                <div class="bg-slate-50 rounded-2xl p-4">
+                    <p class="text-[10px] font-bold text-slate-400 mb-1">미션 완료</p>
+                    <p id="resultDone" class="text-3xl font-black text-emerald-500">0</p>
                 </div>
             </div>
 
-            <div class="bg-blue-50 text-blue-700 py-3 px-6 rounded-full inline-block font-bold text-sm mb-10">
+            <div class="bg-blue-50 text-blue-700 py-2 px-4 rounded-full inline-block font-bold text-[10px] mb-8">
                 인증 시각: <span id="resultTime"></span>
             </div>
 
-            <button onclick="closeScreenshot()" class="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold">돌아가기</button>
-            <p class="mt-4 text-[10px] text-slate-300">이 화면을 캡처해서 제출하세요!</p>
+            <button onclick="closeScreenshot()" class="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm">활동 돌아가기</button>
+            <p class="mt-4 text-[9px] text-slate-300">화면을 캡처하여 선생님께 제출하세요!</p>
         </div>
     </div>
 
@@ -156,16 +195,19 @@
             { id: 16, type: 'mission', loc: '문자박물관', title: '흰색 곡선의 미', task: '박물관 건물의 곡선이 잘 드러나도록 예술적인 각도로 사진 찍기!', hint: '멀리서 바라보는 각도가 좋습니다.' }
         ];
 
-        let state = JSON.parse(localStorage.getItem('dorim_state')) || Array(16).fill(false);
-        let user = JSON.parse(localStorage.getItem('dorim_user')) || null;
+        let state = JSON.parse(localStorage.getItem('dorim_state_v2')) || Array(16).fill(false);
+        let user = JSON.parse(localStorage.getItem('dorim_user_v2')) || null;
 
         function startApp() {
             const name = document.getElementById('userName').value.trim();
             const classNum = document.getElementById('userClass').value.trim();
-            if(!name || !classNum) return alert("이름과 학번을 모두 입력해주세요!");
+            if(!name || !classNum) {
+                alert("이름과 학번을 모두 입력해주세요!");
+                return;
+            }
             
             user = { name, class: classNum };
-            localStorage.setItem('dorim_user', JSON.stringify(user));
+            localStorage.setItem('dorim_user_v2', JSON.stringify(user));
             document.getElementById('loginOverlay').style.display = 'none';
             render();
         }
@@ -179,17 +221,20 @@
             board.innerHTML = '';
             
             bingoData.forEach((data, i) => {
+                const isDone = state[i];
                 const cell = document.createElement('div');
-                cell.className = `bingo-cell ${state[i] ? 'cell-completed' : ''}`;
+                cell.className = `bingo-cell ${isDone ? 'cell-completed' : ''}`;
                 cell.innerHTML = `
-                    <div class="cell-inner ${state[i] ? 'is-flipped' : ''}" onclick="handleClick(${i})">
+                    <div class="cell-inner ${isDone ? 'is-flipped' : ''}" onclick="handleClick(${i})">
                         <div class="cell-front type-${data.type}">
-                            <div class="flex flex-col items-center">
-                                <span class="text-[9px] text-slate-400 mb-1 uppercase">${data.loc}</span>
-                                <span class="leading-tight">${data.title}</span>
-                            </div>
+                            <span class="text-[8px] text-slate-400 mb-0.5 uppercase font-black">${data.loc}</span>
+                            <span class="leading-[1.1] text-center">${data.title}</span>
                         </div>
-                        <div class="cell-back"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                        <div class="cell-back">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
                     </div>
                 `;
                 board.appendChild(cell);
@@ -198,36 +243,72 @@
         }
 
         function handleClick(i) {
-            if(state[i]) return;
             const data = bingoData[i];
             const modal = document.getElementById('modal');
             const content = document.getElementById('modalContent');
+            const isDone = state[i];
             
-            let html = `<div class="mb-2 px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 inline-block">${data.loc}</div>
-                        <h2 class="text-2xl font-black text-slate-800 mb-6">${data.title}</h2>`;
+            let html = `<div class="mb-2 px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 inline-block">${data.loc}</div>`;
             
-            if(data.type === 'quiz') {
-                html += `<div class="bg-slate-50 p-6 rounded-2xl mb-4 font-medium">${data.q}</div>
-                         <input type="text" id="ansIn" placeholder="정답 입력" class="w-full p-4 border rounded-2xl text-center font-bold outline-none focus:border-rose-400">
-                         <button onclick="check(${i})" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold mt-4">정답 확인</button>`;
+            if (isDone) {
+                // 이미 완료된 경우: 수정(초기화) 화면 표시
+                html += `
+                    <h2 class="text-xl font-black text-slate-800 mb-4">${data.title}</h2>
+                    <div class="bg-emerald-50 p-5 rounded-2xl mb-6 text-center">
+                        <p class="text-emerald-700 font-bold mb-1">성공한 미션입니다!</p>
+                        <p class="text-slate-500 text-xs">내용을 수정하거나 다시 수행하려면<br>아래 버튼을 눌러주세요.</p>
+                    </div>
+                    <button onclick="resetMission(${i})" class="w-full py-4 bg-rose-100 text-rose-600 rounded-2xl font-bold active:scale-95 transition-all">미션 초기화 (다시 하기)</button>
+                `;
             } else {
-                html += `<div class="bg-sky-50 p-6 rounded-2xl mb-4 text-sky-900 font-medium">${data.task}</div>
-                         <p class="text-slate-400 text-xs italic mb-8">💡 힌트: ${data.hint}</p>
-                         <button onclick="done(${i})" class="w-full py-4 bg-sky-500 text-white rounded-2xl font-bold">미션 완료!</button>`;
+                // 아직 완료되지 않은 경우: 퀴즈/활동 화면 표시
+                html += `<h2 class="text-xl font-black text-slate-800 mb-4">${data.title}</h2>`;
+                if(data.type === 'quiz') {
+                    html += `
+                        <div class="bg-slate-50 p-5 rounded-2xl mb-4 text-sm font-medium leading-relaxed">${data.q}</div>
+                        <input type="text" id="ansIn" placeholder="정답 입력" 
+                            class="w-full p-4 border-2 border-slate-100 rounded-2xl text-center font-bold outline-none focus:border-rose-400">
+                        <button onclick="checkAnswer(${i})" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold mt-4 shadow-lg shadow-rose-100 active:scale-95 transition-all">정답 확인</button>
+                    `;
+                } else {
+                    html += `
+                        <div class="bg-sky-50 p-5 rounded-2xl mb-4 text-sky-900 text-sm font-medium leading-relaxed">${data.task}</div>
+                        <p class="text-slate-400 text-[11px] italic mb-6 px-1">💡 힌트: ${data.hint}</p>
+                        <button onclick="completeMission(${i})" class="w-full py-4 bg-sky-500 text-white rounded-2xl font-bold shadow-lg shadow-sky-100 active:scale-95 transition-all">미션 완료!</button>
+                    `;
+                }
             }
+            
             content.innerHTML = html;
             modal.style.display = 'flex';
+            if(!isDone && data.type === 'quiz') document.getElementById('ansIn').focus();
         }
 
-        function check(i) {
-            const val = document.getElementById('ansIn').value.trim().replace(/\s/g, '');
-            if(val === bingoData[i].a.replace(/\s/g, '')) done(i);
-            else alert("정답이 아닙니다!");
+        function checkAnswer(i) {
+            const input = document.getElementById('ansIn');
+            const val = input.value.trim().replace(/\s/g, '');
+            if(val === bingoData[i].a.replace(/\s/g, '')) {
+                completeMission(i);
+            } else {
+                input.classList.add('shake', 'border-rose-400');
+                setTimeout(() => input.classList.remove('shake'), 500);
+            }
         }
 
-        function done(i) {
+        function completeMission(i) {
             state[i] = true;
-            localStorage.setItem('dorim_state', JSON.stringify(state));
+            saveAndRefresh();
+        }
+
+        function resetMission(i) {
+            if(confirm("이 칸의 활동 기록을 지우고 다시 하시겠습니까?")) {
+                state[i] = false;
+                saveAndRefresh();
+            }
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem('dorim_state_v2', JSON.stringify(state));
             closeModal();
             render();
         }
@@ -245,10 +326,11 @@
         }
 
         function showScreenshot() {
+            if(!user) return;
             document.getElementById('resultName').innerText = `${user.class} ${user.name}`;
             document.getElementById('resultBingo').innerText = document.getElementById('bingoCountTop').innerText;
             document.getElementById('resultDone').innerText = document.getElementById('doneCount').innerText;
-            document.getElementById('resultTime').innerText = new Date().toLocaleString();
+            document.getElementById('resultTime').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
             document.getElementById('screenshotModal').style.display = 'flex';
         }
 
