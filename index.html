@@ -3,340 +3,614 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>도림고 송도 체험학습 빙고</title>
+    <title>송도 현장체험학습 4x4 스마트 빙고</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter & Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
-        
-        body { 
-            font-family: 'Pretendard', sans-serif; 
-            background-color: #f1f5f9; 
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        
-        /* 시작 화면 레이어 */
-        #loginOverlay {
-            position: fixed; inset: 0; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+        /* 스크롤바 숨기기 */
+        ::-webkit-scrollbar {
+            display: none;
         }
-
-        .bingo-grid { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 8px; 
-            width: 100%;
-        }
-        
-        .bingo-cell { 
-            aspect-ratio: 1 / 1; 
-            perspective: 1000px; 
-            min-width: 0; /* 그리드 붕괴 방지 */
-        }
-
-        .cell-inner { 
-            position: relative; width: 100%; height: 100%; text-align: center; 
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform-style: preserve-3d; cursor: pointer;
-        }
-        
-        .cell-inner.is-flipped { transform: rotateY(180deg); }
-        
-        .cell-front, .cell-back {
-            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 4px; border-radius: 12px; border: 1.5px solid #fff; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            word-break: keep-all;
-        }
-
-        /* 모바일 텍스트 크기 최적화 */
-        .cell-front { 
-            background-color: #fff; 
-            color: #1e293b; 
-            font-size: clamp(0.65rem, 2.5vw, 0.85rem); 
-            font-weight: 700;
-        }
-        
-        .cell-back { 
-            background-color: #10b981; 
-            color: #fff; 
-            transform: rotateY(180deg); 
-        }
-
-        .cell-completed .cell-front { 
-            background-color: #ecfdf5; 
-            color: #065f46; 
-            border-color: #34d399; 
-        }
-        
-        .type-quiz { border-top: 4px solid #f43f5e; }
-        .type-mission { border-top: 4px solid #0ea5e9; }
-
-        #screenshotModal {
-            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9);
-            z-index: 200; align-items: center; justify-content: center; padding: 1.25rem;
-        }
-
-        .shake { animation: shake 0.5s ease-in-out; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        .bingo-cell {
+            aspect-ratio: 1 / 1;
         }
     </style>
 </head>
-<body class="p-4 max-w-md mx-auto">
+<body class="bg-slate-900 text-slate-100 flex flex-col justify-between min-h-screen overflow-hidden">
 
-    <div id="loginOverlay">
-        <div class="w-full bg-white rounded-[2rem] p-6 shadow-2xl text-center">
-            <div class="mb-6">
-                <span class="text-4xl">🏢</span>
-                <h1 class="text-2xl font-black text-slate-800 mt-2">도림고 송도 미션</h1>
-                <p class="text-slate-500 text-sm">본인의 이름과 학번을 입력하세요</p>
+<!-- 게임 진입 전 로그인 화면 -->
+<div id="login-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 px-6 transition-all duration-300">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl text-center">
+        <div class="mb-6">
+            <span class="px-3 py-1 text-xs font-semibold bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">Songdo Field Trip</span>
+            <h1 class="text-2xl font-black mt-3 text-white leading-tight">송도 퀴즈 빙고 🧩<br><span class="text-blue-400 text-lg">인천도시역사관 · G타워 · 문자박물관</span></h1>
+            <p class="text-slate-400 text-xs mt-2">체험 장소를 탐색하며 퀴즈를 풀고 빙고를 완성하세요!</p>
+        </div>
+
+        <div class="space-y-4 text-left mb-6">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">학번 (예: 20101)</label>
+                <input type="number" id="student-id" placeholder="학번 5자리를 입력하세요" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-500 text-sm">
             </div>
-            <div class="space-y-3">
-                <input type="text" id="userClass" placeholder="학번 (예: 10101)" 
-                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg transition-all">
-                <input type="text" id="userName" placeholder="이름 (예: 홍길동)" 
-                    class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-500 text-center font-bold text-lg transition-all">
-                <button onclick="startApp()" 
-                    class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-blue-100 active:scale-95 transition-transform">
-                    빙고 시작하기
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">이름</label>
+                <input type="text" id="student-name" placeholder="이름을 입력하세요" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-500 text-sm">
+            </div>
+        </div>
+
+        <button onclick="startGame()" class="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 text-sm">
+            빙고판 생성 및 시작하기 🚀
+        </button>
+        <p class="text-[10px] text-slate-500 mt-4">⚠️ 학생마다 서로 다른 랜덤 16문항이 빙고판에 배치됩니다.</p>
+    </div>
+</div>
+
+<!-- 메인 게임 영역 (모바일 1화면 최적화) -->
+<header id="main-header" class="px-4 pt-3 pb-2 bg-slate-900 border-b border-slate-800">
+    <div class="flex justify-between items-center">
+        <div>
+            <div class="flex items-center space-x-2">
+                <span class="text-lg font-black tracking-tight text-white">송도 퀴즈 빙고</span>
+                <span id="capture-badge" class="hidden px-2 py-0.5 text-[10px] bg-emerald-500 text-slate-950 font-black rounded">인증용</span>
+            </div>
+            <p class="text-[10px] text-slate-400">터치하여 문제를 풀고, 녹색(성공) 빙고를 완성하세요!</p>
+        </div>
+        <div class="text-right">
+            <span id="player-badge" class="block text-sm font-bold text-blue-400 bg-blue-950/40 px-3 py-1 rounded-lg border border-blue-900/40">
+                학번 이름
+            </span>
+        </div>
+    </div>
+</header>
+
+<!-- 메인 빙고판 바디 -->
+<main class="flex-grow flex flex-col justify-center px-4 py-2 bg-slate-950 overflow-hidden">
+    <div class="w-full max-w-md mx-auto flex flex-col space-y-3">
+        <!-- 상단 현황판 -->
+        <div class="flex justify-between items-center bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-xs">
+            <div class="flex items-center space-x-1.5">
+                <span class="text-slate-400">현재 달성:</span>
+                <span id="bingo-count" class="font-extrabold text-amber-400 text-sm">🔥 0 빙고</span>
+            </div>
+            <div class="flex space-x-2 text-[10px]">
+                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></span><span class="text-slate-400">성공</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 bg-rose-500 rounded-sm"></span><span class="text-slate-400">실패</span></span>
+                <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 bg-slate-800 rounded-sm"></span><span class="text-slate-400">미수행</span></span>
+            </div>
+        </div>
+
+        <!-- 4x4 빙고 보드 -->
+        <div id="bingo-board" class="grid grid-cols-4 gap-2 w-full">
+            <!-- JavaScript에서 동적으로 셀 삽입 -->
+        </div>
+    </div>
+</main>
+
+<!-- 하단 컨트롤 영역 -->
+<footer id="main-footer" class="px-4 py-3 bg-slate-900 border-t border-slate-800 flex justify-between gap-3">
+    <button onclick="toggleCaptureMode()" id="btn-capture" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-all border border-slate-700 flex items-center justify-center space-x-1">
+        <span>📸 캡처용 모드 전환</span>
+    </button>
+    <button onclick="confirmReset()" id="btn-reset" class="px-4 py-3 bg-slate-900 hover:bg-rose-950/20 text-slate-500 hover:text-rose-400 font-medium rounded-xl text-xs transition-all border border-slate-800">
+        초기화
+    </button>
+</footer>
+
+<!-- 퀴즈 해결 모달 -->
+<div id="quiz-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center px-4">
+    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <!-- 닫기 버튼 -->
+        <button onclick="closeQuizModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-all text-lg">✕</button>
+        
+        <!-- 위치 헤더 -->
+        <div class="mb-3">
+            <span id="modal-loc-badge" class="inline-block px-2.5 py-1 text-[10px] font-extrabold rounded-md"></span>
+            <span id="modal-quiz-num" class="text-xs text-slate-400 ml-2 font-mono">Q-01</span>
+        </div>
+
+        <!-- 문제 내용 -->
+        <div class="mb-4">
+            <h3 class="text-xs font-bold text-slate-500 mb-1">질문</h3>
+            <p id="modal-question" class="text-sm font-semibold text-white leading-relaxed whitespace-pre-line bg-slate-950 p-3 rounded-xl border border-slate-800 min-h-[4.5rem]">
+                여기에 질문 내용이 들어갑니다.
+            </p>
+        </div>
+
+        <!-- 정답 입력 -->
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">정답 입력</label>
+                <input type="text" id="quiz-answer-input" placeholder="정답을 정확히 입력하세요" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-center text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:text-slate-500 placeholder:font-normal">
+            </div>
+            
+            <div id="modal-status-box" class="hidden p-2.5 rounded-xl text-center text-xs font-bold">
+                <!-- 결과 상태 메시지 -->
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeQuizModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all">
+                    닫기
+                </button>
+                <button onclick="submitAnswer()" id="btn-submit" class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition-all shadow-md shadow-blue-500/10">
+                    정답 확인하기
                 </button>
             </div>
         </div>
     </div>
+</div>
 
-    <header class="mb-5">
-        <div class="flex justify-between items-end mb-4 px-1">
-            <div>
-                <p class="text-blue-600 font-bold text-xs">2026 현장체험학습</p>
-                <h2 id="displayUser" class="text-xl font-black text-slate-800">로딩 중...</h2>
-            </div>
-            <div class="text-right">
-                <span id="bingoCountTop" class="text-3xl font-black text-rose-500">0</span>
-                <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-tighter">Bingos</span>
-            </div>
-        </div>
+<!-- 알림 피드백 박스 -->
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 hidden bg-blue-500 text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-lg text-center min-w-[180px]">
+    알림 메시지
+</div>
+
+<script>
+// 100문항 퀴즈 데이터베이스
+// 분류: 1=인천도시역사관, 2=G타워 홍보관, 3=국립세계문자박물관
+const QUIZ_DB = [
+    // 1. 인천도시역사관 (35문항)
+    { id: 1, loc: 1, q: "인천이 우리나라 최초로 외국의 문물을 받아들이며 문을 연 사건은 무엇인가요?", a: ["개항"] },
+    { id: 2, loc: 1, q: "1883년 개항 당시 인천의 옛 이름은 무엇이었을까요?", a: ["제물포"] },
+    { id: 3, loc: 1, q: "근대도시관 입구 근처에서 볼 수 있는, 옛날 인천항에 드나들던 증기선의 이름은?", a: ["창룡호"] },
+    { id: 4, loc: 1, q: "개항기 인천에 만들어진 외국인들의 거주 및 치외법권 지역을 무엇이라 부르나요?", a: ["조계", "각국조계"] },
+    { id: 5, loc: 1, q: "인천에 가장 먼저 조계를 설치한 나라는 어디일까요?", a: ["일본"] },
+    { id: 6, loc: 1, q: "청나라 조계지와 일본 조계지 경계에 세워진 계단이 있는 곳은 현재 어디 근처인가요?", a: ["자유공원", "인천자유공원", "인천 자유공원"] },
+    { id: 7, loc: 1, q: "개항기 인천항에서 물건을 나르고 하역하던 노동자들을 부르던 말은?", a: ["부두노동자", "쿨리"] },
+    { id: 8, loc: 1, q: "우리나라 최초의 철도로, 인천역과 노량진역을 잇던 이 철도의 이름은?", a: ["경인선"] },
+    { id: 9, loc: 1, q: "경인선에 처음 도입되어 달렸던 증기기관차의 이름은 무엇인가요?", a: ["모가형", "모가형증기기관차", "모가"] },
+    { id: 10, loc: 1, q: "인천역 앞에 세워진 화려한 중국식 전통 대문의 이름은 무엇인가요?", a: ["패루"] },
+    { id: 11, loc: 1, q: "개항기 인천에 세워진 우리나라 최초의 서양식 호텔 이름은?", a: ["대불호텔"] },
+    { id: 12, loc: 1, q: "전시관에 재현된 옛날 인천의 은행 중, '일본 제1은행'의 주요 업무는 무엇이었나요?", a: ["관세징수", "관세 징수", "금매입", "금 매입"] },
+    { id: 13, loc: 1, q: "조선시대 인천을 방어하기 위해 해안가에 설치했던 방어 시설의 이름은?", a: ["포대", "화도진"] },
+    { id: 14, loc: 1, q: "인천에서 처음 시작되어 전국으로 퍼진, 면과 춘장을 볶아 만든 음식은?", a: ["짜장면", "자장면"] },
+    { id: 15, loc: 1, q: "근대기 인천항에서 밀수품을 단속하고 관세를 부과하던 기관의 이름은?", a: ["인천해관"] },
+    { id: 16, loc: 1, q: "인천에서 조립·생산된 우리나라 최초의 국산 자동차(국산 부품 혼용)의 이름은?", a: ["시발자동차", "시발", "시-발"] },
+    { id: 17, loc: 1, q: "부평에 있던 대형 자동차 공장의 옛 이름으로, 대우자동차의 전신이 된 회사는?", a: ["신진자동차", "신진"] },
+    { id: 18, loc: 1, q: "70~80년대 인천 부평공장에서 생산되어 큰 인기를 끈 국민 경차의 이름은?", a: ["티코"] },
+    { id: 19, loc: 1, q: "과거 인천항의 조수간만의 차를 극복하기 위해 만들어진, 문을 닫아 물을 가두는 시설은?", a: ["갑문"] },
+    { id: 20, loc: 1, q: "인천의 대표적인 공업도시인 '부평'에 일제강점기 시절 세워진 대규모 무기 공장의 이름은?", a: ["조병창", "일본육군조병창", "일본 육군 조병창"] },
+    { id: 21, loc: 1, q: "일제강점기 부평 조병창에 강제 동원된 노동자들이 살던 줄지어 늘어선 집들을 무엇이라 부르나요?", a: ["미쓰비시 줄사택", "줄사택", "미쓰비시줄사택"] },
+    { id: 22, loc: 1, q: "과거 수인선 철도를 달리던, 일반 기차보다 폭이 좁은 미니 기차를 무엇이라 하나요?", a: ["협궤열차", "협궤"] },
+    { id: 23, loc: 1, q: "협궤열차가 주로 실어나르던 인천의 대표적인 특산물은 무엇이었을까요?", a: ["소금"] },
+    { id: 24, loc: 1, q: "인천 전역에 있던 소금을 만들던 넓은 땅을 무엇이라 부르나요?", a: ["염전"] },
+    { id: 25, loc: 1, q: "전시관 벽면에 있는 옛 인천의 중심지 지도에서, 현재의 관교동·문학동 부근에 있던 조선시대 행정기관은?", a: ["인천도호부관아", "인천도호부청사", "도호부관아", "도호부청사"] },
+    { id: 26, loc: 1, q: "인천 경제자유구역(IFEZ)을 구성하는 세 가지 도시의 이름은?", a: ["송도, 영종, 청라", "송도 영종 청라", "송도,영종,청라"] },
+    { id: 27, loc: 1, q: "도시모형관 바닥에 펼쳐진 거대한 디오라마 모형은 실제 인천을 몇 분의 1로 축소한 것인가요?", a: ["1:1500", "1500", "1500분의 1"] },
+    { id: 28, loc: 1, q: "모형관에서 찾을 수 있는, 영종도와 송도국제도시를 연결하는 우리나라에서 가장 긴 다리는?", a: ["인천대교"] },
+    { id: 29, loc: 1, q: "인천대교의 총 길이는 약 몇 km 일까요?", a: ["21.38", "21.38km", "21"] },
+    { id: 30, loc: 1, q: "송도 센트럴파크 한가운데를 흐르는 물길은 민물일까요, 바닷물일까요?", a: ["바닷물", "해수"] },
+    { id: 31, loc: 1, q: "송도국제도시는 원래 바다였던 곳을 메워서 만들었습니다. 이 공법을 무엇이라 하나요?", a: ["매립"] },
+    { id: 32, loc: 1, q: "모형관에서 가장 높게 솟아 있는, 송도의 랜드마크 빌딩(지하 3층, 지상 68층)의 이름은 무엇일까요?", a: ["포스코타워-송도", "포스코타워송도", "포스코타워", "동북아무역타워"] },
+    { id: 33, loc: 1, q: "송도에 있는 전통 한옥 스타일의 호텔 및 문화공간의 이름은?", a: ["경원재", "경원재앰배서더", "경원재 앰배서더"] },
+    { id: 34, loc: 1, q: "인천국제공항이 위치한 섬의 이름은 무엇인가요?", a: ["영종도"] },
+    { id: 35, loc: 1, q: "도시모형관에서 '쇼 타임'에 불이 켜지며 입체적으로 변하는 미디어파사드 영상의 주제는?", a: ["인천의 미래", "인천의미래", "스마트시티"] },
+
+    // 2. G타워 경제자유구역 홍보관 (30문항)
+    { id: 36, loc: 2, q: "G타워 홍보관으로 가기 위해 타고 올라가는 엘리베이터는 몇 층까지 운행하나요?", a: ["33", "33층"] },
+    { id: 37, loc: 2, q: "G타워에서 창밖을 보았을 때, 서해바다 너머로 보이는 거대한 공항의 이름은?", a: ["인천국제공항", "인천공항"] },
+    { id: 38, loc: 2, q: "홍보관 안내판에서 소개하는 IFEZ의 풀 네임(영어 영문명)은 무엇인가요?", a: ["Incheon Free Economic Zone", "incheon free economic zone"] },
+    { id: 39, loc: 2, q: "IFEZ(인천경제자유구역)가 지정된 최초의 연도는 몇 년도일까요?", a: ["2003", "2003년"] },
+    { id: 40, loc: 2, q: "송도국제도시가 추구하는 핵심 비전 중 하나로, 첨단 정보통신기술(ICT)이 집약된 도시를 뜻하는 말은?", a: ["스마트시티", "스마트 시티", "Smart City"] },
+    { id: 41, loc: 2, q: "G타워에서 센트럴파크 쪽을 내려다보면 보이는, 세 개의 대형 그릇 모양을 한 건축물의 이름은?", a: ["트라이보울", "Tri-Bowl", "트라이 볼"] },
+    { id: 42, loc: 2, q: "트라이보울(Tri-Bowl)이 상징하는 세 가지 요소는 무엇인가요?", a: ["하늘, 땅, 바다", "송도, 영종, 청라", "하늘 땅 바다", "송도 영종 청라"] },
+    { id: 43, loc: 2, q: "G타워 전망대에서 바로 내려다보이는, 인공수로가 있는 우리나라 최초의 해수 공원 이름은?", a: ["센트럴파크", "송도센트럴파크", "송도 센트럴파크"] },
+    { id: 44, loc: 2, q: "송도 센트럴파크에서 승객들을 태우고 수로를 오가는 배의 이름은?", a: ["수상택시", "문보트"] },
+    { id: 45, loc: 2, q: "G타워 내부에 입주해 있는 녹색기후기금의 영문 약자는 무엇인가요?", a: ["GCF"] },
+    { id: 46, loc: 2, q: "송도국제도시의 쓰레기 처리 방식으로, 집에서 버린 쓰레기가 지하 관로를 통해 자동으로 모이는 설비의 이름은?", a: ["자동집하설비", "생활폐기물자동집하설비", "자동집하시설"] },
+    { id: 47, loc: 2, q: "송도 거리에 있는 '스마트 그늘막'이나 '스마트 가로등'은 무엇을 활용하여 에너지를 얻나요?", a: ["태양광", "태양열"] },
+    { id: 48, loc: 2, q: "전망대 스크린에서 소개하는, 청라국제도시에 지어지고 있는 초고층 타워의 이름은?", a: ["청라시티타워", "청라 시티타워", "시티타워"] },
+    { id: 49, loc: 2, q: "홍보관 영상에서 설명하는 인천 경제자유구역의 최종 목표 연도는 몇 년도일까요?", a: ["2030", "2030년"] },
+    { id: 50, loc: 2, q: "송도에 입주해 있는 세계적인 바이오 의약품 공장 두 곳의 이름을 대시오.", a: ["삼성바이오로직스, 셀트리온", "삼성바이오로직스 셀트리온", "셀트리온, 삼성바이오로직스"] },
+    { id: 51, loc: 2, q: "G타워에서 보이는 다리 중, 독특한 아치 모양으로 송도와 연수구 구도심을 연결하는 다리의 이름은?", a: ["컨벤시아교"] },
+    { id: 52, loc: 2, q: "홍보관 내 '미디어 월' 화면을 터치하면 볼 수 있는 청라국제도시의 중심 호수공원 이름은?", a: ["청라호수공원"] },
+    { id: 53, loc: 2, q: "영종국제도시의 핵심 산업으로, 리조트, 카지노, 쇼핑몰 등이 결합된 산업을 무엇이라 하나요?", a: ["복합리조트", "복합리조트 산업", "MICE"] },
+    { id: 54, loc: 2, q: "송도에 위치한 국제기구 중, 세계보건기구(WHO) 산하 아시아태평양 환경보건센터의 약자는?", a: ["WHO APCHE", "WHO-APCHE"] },
+    { id: 55, loc: 2, q: "G타워 빌딩 자체의 독특한 외관 디자인은 무엇을 형상화하여 회오리 모양으로 지어졌을까요?", a: ["돛대", "지구의 역동성"] },
+    { id: 56, loc: 2, q: "G타워에서 북쪽을 바라보면 보이는, 인천항의 거대한 컨테이너 부두 이름은?", a: ["인천신항", "신항"] },
+    { id: 57, loc: 2, q: "홍보관 지도에서 인천공항과 인천항을 합쳐 부르는 물류 거점의 핵심 명칭은?", a: ["공항·항만 복합물류 허브", "복합물류 허브", "공항 항만 복합물류 허브"] },
+    { id: 58, loc: 2, q: "G타워 33층 전망대 바닥에 표시된 '방위 표시'에서, 북쪽(N)이 가리키는 방향에 있는 대학교는?", a: ["인천대학교", "인천대"] },
+    { id: 59, loc: 2, q: "홍보관 내 가상현실(VR) 또는 4D 체험관에서 체험할 수 있는 미래형 이동수단의 이름은?", a: ["UAM", "도심항공교통"] },
+    { id: 60, loc: 2, q: "전망대 유리창에 붙어 있는 안내판을 참고하여, 송도 G타워에서 '서울 63빌딩'까지의 직선거리는 약 몇 km인지 쓰시오.", a: ["35", "35km", "약 35km"] },
+    { id: 61, loc: 2, q: "송도 컨벤시아(전시컨벤션센터)의 지붕 모양은 무엇을 형상화한 것일까요?", a: ["태백산맥", "파도"] },
+    { id: 62, loc: 2, q: "G타워 전망대 내부 안내판이나 쉼터 주변 벽면에 표시된 IFEZ 마스코트 캐릭터 무리의 이름은 무엇일까요?", a: ["버디 친구들", "버디친구들", "점박이물범"] },
+    { id: 63, loc: 2, q: "전망대에서 영종도 방향을 바라볼 때, 바다 위에 떠 있는 인공섬이자 대형 여객선들이 드나드는 곳은?", a: ["인천항 신국제여객터미널", "신국제여객터미널"] },
+    { id: 64, loc: 2, q: "G타워 홍보관 안에서 소개하는 '송도 바이오 클러스터'는 단일 도시 기준으로 세계 몇 위의 바이오 의약품 생산 역량을 가지고 있나요?", a: ["1", "1위", "세계 1위", "세계1위"] },
+    { id: 65, loc: 2, q: "홍보관 출구 근처의 디지털 방명록 화면에 글을 남기면 내가 쓴 글이 어디에 크게 나타나나요?", a: ["미디어 월", "대형 미디어 월", "미디어 월 화면"] },
+
+    // 3. 국립세계문자박물관 (35문항)
+    { id: 66, loc: 3, q: "인류가 문자를 발명하기 전, 동굴 벽이나 바위에 사냥감 등을 그린 것을 무엇이라 하나요?", a: ["암각화", "동굴벽화", "벽화"] },
+    { id: 67, loc: 3, q: "그림으로 뜻을 전하던 단계를 지나, 사물의 모양을 본떠 만든 문자를 무엇이라 하나요?", a: ["상형문자"] },
+    { id: 68, loc: 3, q: "메소포타미아 문명에서 점토판에 뾰족한 갈대로 꾹꾹 눌러 쓴, 인류 최초의 문자 이름은?", a: ["쐐기문자", "설형문자"] },
+    { id: 69, loc: 3, q: "쐐기문자를 기록할 때 종이 대신 사용했던 말랑말랑한 흙 판의 이름은?", a: ["점토판"] },
+    { id: 70, loc: 3, q: "메소포타미아의 왕이 만든 법전으로, '눈에는 눈, 이에는 이'라는 법칙이 새겨진 대표적인 문자 유물은?", a: ["함무라비 법전", "함무라비법전", "함무라비"] },
+    { id: 71, loc: 3, q: "고대 이집트인들이 나일강 가에 자라는 풀기둥을 얇게 펴서 만든, 종이의 어원이 된 기록 매체는?", a: ["파피루스"] },
+    { id: 72, loc: 3, q: "이집트 상형문자 해독의 결정적 열쇠가 된, 세 가지 문자가 동시에 새겨진 유명한 비석의 이름은?", a: ["로제타석", "로제타 스톤", "로제타"] },
+    { id: 73, loc: 3, q: "로제타석에 새겨진 세 가지 문자는 이집트 상형문자, 이집트 민중문자, 그리고 어느 나라 문자일까요?", a: ["그리스", "그리스 문자"] },
+    { id: 74, loc: 3, q: "로제타석을 바탕으로 이집트 상형문자를 마침내 해독해 낸 프랑스의 언어학자 이름은?", a: ["샹폴리옹", "장프랑수아 샹폴리옹", "장 프랑수아 샹폴리옹"] },
+    { id: 75, loc: 3, q: "왕의 이름이나 신의 이름을 보호하기 위해 타원형 테두리를 둘러 표시한 이집트 상형문자 기호를 무엇이라 하나요?", a: ["카르투슈", "Cartouche"] },
+    { id: 76, loc: 3, q: "중국 상나라 때, 거북이 등껍질이나 소의 어깨뼈에 새겨진 한자의 가장 원시적인 형태는?", a: ["갑골문자", "갑골문"] },
+    { id: 77, loc: 3, q: "갑골문자는 당시 왕이 무엇을 하기 위해 새겼던 것일까요?", a: ["점", "점을 치기 위해", "점치기"] },
+    { id: 78, loc: 3, q: "현재 전 세계에서 쓰이는 알파벳(ABC...)의 시조가 된, 지중해 무역을 하던 해상 민족의 문자는?", a: ["페니키아", "페니키아 문자"] },
+    { id: 79, loc: 3, q: "북유럽 바이킹들이 주로 사용했으며, 칼이나 돌에 새겼던 직선 위주의 신비로운 문자 이름은?", a: ["룬", "룬 문자", "루닉", "루닉 문자"] },
+    { id: 80, loc: 3, q: "고대 인도에서 사용되었으며, 현재 불교 경전 등에 남아있는 문자의 이름은?", a: ["범자", "산스크리트", "산스크리트 문자"] },
+    { id: 81, loc: 3, q: "1443년 세종대왕이 창제한 우리나라 고유의 문자 이름은?", a: ["훈민정음", "한글"] },
+    { id: 82, loc: 3, q: "한글은 자음과 모음이 합쳐져 소리를 내는 문자입니다. 이러한 문자를 무슨 문자라고 하나요?", a: ["표음문자", "음소문자"] },
+    { id: 83, loc: 3, q: "훈민정음 해례본에서 한글 자음(ㄱ, ㄴ, ㅁ, ㅅ, ㅇ)은 무엇의 모양을 본떠 만들었다고 하나요?", a: ["발음 기관", "발음 기관의 모양", "발음기관"] },
+    { id: 84, loc: 3, q: "한글 모음(ㆍ, ㅡ, ㅣ)은 우주의 세 가지 근본 요소를 본떴습니다. 이 세 가지는 무엇인가요?", a: ["하늘, 땅, 사람", "천지인", "하늘 땅 사람"] },
+    { id: 85, loc: 3, q: "한글은 전 세계 문자 중 유일하게 만든 사람, 반포일, 그리고 '이것'이 기록으로 명확히 남아있습니다. 글자의 제작 원리를 뜻하는 이것은?", a: ["창제 원리", "제자 원리", "창제원리", "제자원리"] },
+    { id: 86, loc: 3, q: "독일의 구텐베르크가 발명하여 문자와 지식을 전 세계에 폭발적으로 확산시킨 기술은?", a: ["금속활자", "금속활자 인쇄술", "활판 인쇄술"] },
+    { id: 87, loc: 3, q: "구텐베르크보다 앞서 세계 최초로 금속활자로 찍어낸 책(직지심체요절)을 만들어 낸 나라는 어디인가요?", a: ["고려", "우리나라"] },
+    { id: 88, loc: 3, q: "이슬람 문화권에서 알라의 말씀을 아름다운 선과 문양으로 표현한 문자 예술을 무엇이라 하나요?", a: ["캘리그래피", "서예", "아랍 서예"] },
+    { id: 89, loc: 3, q: "종이가 발명되기 전, 서양에서 양이나 염소의 가죽을 가공해서 만든 기록 매체는?", a: ["양피지"] },
+    { id: 90, loc: 3, q: "고대 마야 문명에서 사용한, 사람이나 동물, 기하학적 모양이 복합된 독특한 문자의 이름은?", a: ["마야 문자", "마야문자"] },
+    { id: 91, loc: 3, q: "시각장애인들이 손끝으로 만져서 읽을 수 있도록 볼록하게 튀어나오게 만든 문자는?", a: ["점자"] },
+    { id: 92, loc: 3, q: "점자를 발명한 프랑스의 시각장애인 교육자의 이름은?", a: ["루이 브라유", "루이 브라이", "브라유"] },
+    { id: 93, loc: 3, q: "청각장애인들이 손짓과 몸짓, 표정으로 소통하는 시각 언어를 무엇이라 하나요?", a: ["수어", "수화"] },
+    { id: 94, loc: 3, q: "현대 스마트폰에서 말 대신 감정을 전달할 때 쓰는 그림 기호(😀, 👍 등)를 무엇이라 하나요?", a: ["이모지", "이모티콘"] },
+    { id: 95, loc: 3, q: "컴퓨터가 문자를 인식하고 처리할 수 있도록 전 세계 모든 문자에 고유 번호를 부여한 국제 표준 체계는?", a: ["유니코드", "Unicode"] },
+    { id: 96, loc: 3, q: "박물관 로비나 전시실 벽면의 대형 스크린에서 문자가 폭포수처럼 떨어지는 인터랙티브 아트의 주제는?", a: ["문자의 홍수"] },
+    { id: 97, loc: 3, q: "전시실 내 '체험 코너'에서 내 이름을 이집트 상형문자로 변환했을 때, 글자들을 둘러싸고 있는 타원형 테두리(75번 문제 참고)의 이름은?", a: ["카르투슈"] },
+    { id: 98, loc: 3, q: "박물관 야외 동선이나 외관을 멀리서 보면 보이는, 송도 센트럴파크와 어우러진 이 건축물의 모양은 무엇을 형상화했을까요?", a: ["두루마리", "펼쳐진 두루마리", "흰색 두루마리", "파피루스"] },
+    { id: 99, loc: 3, q: "국립세계문자박물관은 전 세계에서 프랑스, 독일에 이어 몇 번째로 지어진 세계문자 전문 박물관인가요?", a: ["세 번째", "3번째", "3", "세번째"] },
+    { id: 100, loc: 3, q: "인류가 문자를 사용함으로써 비로소 기록할 수 있게 된, '선사 시대'와 대비되는 시대의 이름은?", a: ["역사 시대", "역사시대"] }
+];
+
+// 게임 상태 전역 변수
+let state = {
+    studentId: '',
+    studentName: '',
+    board: [], // 현재 16개 퀴즈 객체
+    answers: {}, // 인덱스별 제출한 답 { index: '입력답' }
+    status: {}, // 인덱스별 통과 상태 { index: 'success' | 'failure' | 'unsolved' }
+    activeIdx: null,
+    isCaptureMode: false
+};
+
+// 무작위 셔플 헬퍼
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// 스마트 퀴즈 추출 (각 장소별로 골고루 확보하여 16개 조합)
+function generateBingoPool() {
+    const loc1Pool = QUIZ_DB.filter(q => q.loc === 1); // 역사관
+    const loc2Pool = QUIZ_DB.filter(q => q.loc === 2); // G타워
+    const loc3Pool = QUIZ_DB.filter(q => q.loc === 3); // 문자관
+
+    // 150명 각기 다른 난수를 보장하기 위해 셔플 후 필요한 개수 추출
+    const selectedLoc1 = shuffle([...loc1Pool]).slice(0, 5); // 5개
+    const selectedLoc2 = shuffle([...loc2Pool]).slice(0, 5); // 5개
+    const selectedLoc3 = shuffle([...loc3Pool]).slice(0, 6); // 6개
+
+    // 합쳐서 16개로 만든 뒤 다시 무작위로 뒤섞기
+    const final16 = shuffle([...selectedLoc1, ...selectedLoc2, ...selectedLoc3]);
+    return final16;
+}
+
+// 게임 시작 처리
+function startGame() {
+    const sId = document.getElementById('student-id').value.trim();
+    const sName = document.getElementById('student-name').value.trim();
+
+    if (sId.length < 3 || sName.length < 2) {
+        showToast("학번(3자리 이상)과 이름을 정확히 입력하세요!");
+        return;
+    }
+
+    state.studentId = sId;
+    state.studentName = sName;
+    state.board = generateBingoPool();
+    
+    // 초기 상태값 할당
+    for (let i = 0; i < 16; i++) {
+        state.status[i] = 'unsolved';
+        state.answers[i] = '';
+    }
+
+    // 로그인 화면 숨기기
+    document.getElementById('login-screen').classList.add('translate-y-full');
+    setTimeout(() => {
+        document.getElementById('login-screen').classList.add('hidden');
+    }, 300);
+
+    // 헤더 학생 정보 업데이트
+    document.getElementById('player-badge').innerText = `${sId} ${sName}`;
+
+    renderBoard();
+    updateBingoCount();
+    showToast(`반갑습니다, ${sName} 학생! 빙고 시작!`);
+}
+
+// 장소 세부 정보 포맷터
+function getLocMeta(locId) {
+    switch (locId) {
+        case 1: return { name: "도시역사관", bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-400", badge: "bg-blue-500 text-slate-950" };
+        case 2: return { name: "G타워", bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", badge: "bg-emerald-500 text-slate-950" };
+        case 3: return { name: "문자박물관", bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-400", badge: "bg-purple-500 text-slate-950" };
+    }
+}
+
+// 빙고판 렌더링
+function renderBoard() {
+    const boardEl = document.getElementById('bingo-board');
+    boardEl.innerHTML = '';
+
+    state.board.forEach((quiz, idx) => {
+        const meta = getLocMeta(quiz.loc);
+        const cellStatus = state.status[idx];
+        const studentAns = state.answers[idx];
+
+        let statusClass = "bg-slate-900/80 hover:bg-slate-800/80 border-slate-800 text-slate-400";
+        if (cellStatus === 'success') {
+            statusClass = "bg-emerald-950/60 border-emerald-500/70 text-emerald-200";
+        } else if (cellStatus === 'failure') {
+            statusClass = "bg-rose-950/60 border-rose-500/70 text-rose-200";
+        }
+
+        // 셀 엘리먼트 동적 배치 (모바일 스크린 비율 최적화 구조)
+        const cell = document.createElement('button');
+        cell.className = `bingo-cell flex flex-col justify-between p-1.5 border rounded-xl text-center transition-all active:scale-95 overflow-hidden ${statusClass}`;
+        cell.onclick = () => openQuiz(idx);
+
+        // 상단 장소 라벨
+        const locLabel = document.createElement('span');
+        locLabel.className = `text-[8px] font-black px-1.5 py-0.5 rounded-md ${meta.badge}`;
+        locLabel.innerText = meta.name;
+        if (cellStatus !== 'unsolved') {
+            locLabel.className = `text-[8px] font-semibold px-1 py-0.2 bg-slate-800 text-slate-400 rounded-sm`;
+        }
+
+        // 중단 아이콘 또는 질문 식별자
+        const centerText = document.createElement('div');
+        centerText.className = "text-xs font-bold my-auto tracking-tight";
+        if (cellStatus === 'success') {
+            centerText.innerText = "✅ 성공";
+            centerText.className = "text-xs font-black text-emerald-400 animate-bounce";
+        } else if (cellStatus === 'failure') {
+            centerText.innerText = "❌ 실패";
+            centerText.className = "text-xs font-black text-rose-400";
+        } else {
+            centerText.innerText = `Q-${quiz.id}`;
+            centerText.className = `text-xs font-bold text-slate-300`;
+        }
+
+        // 하단 입력된 정답 (있을 때만 표시)
+        const answerLabel = document.createElement('div');
+        answerLabel.className = "text-[9px] truncate w-full text-slate-300 font-medium px-0.5 py-0.5 bg-slate-950/40 rounded border border-slate-800/50 mt-1 min-h-[1.2rem] flex items-center justify-center";
+        if (cellStatus !== 'unsolved' && studentAns) {
+            answerLabel.innerText = studentAns;
+            if (cellStatus === 'success') {
+                answerLabel.className = "text-[9px] truncate w-full text-emerald-300 font-bold px-0.5 py-0.5 bg-emerald-900/40 rounded border border-emerald-800/40 mt-1 min-h-[1.2rem] flex items-center justify-center";
+            } else {
+                answerLabel.className = "text-[9px] truncate w-full text-rose-300 font-bold px-0.5 py-0.5 bg-rose-900/40 rounded border border-rose-800/40 mt-1 min-h-[1.2rem] flex items-center justify-center";
+            }
+        } else {
+            answerLabel.innerText = "탭하여 풀기";
+            answerLabel.className = "text-[8px] text-slate-500 mt-1 font-normal";
+        }
+
+        cell.appendChild(locLabel);
+        cell.appendChild(centerText);
+        cell.appendChild(answerLabel);
+        boardEl.appendChild(cell);
+    });
+}
+
+// 퀴즈 팝업창 활성화
+function openQuiz(idx) {
+    if (state.isCaptureMode) return; // 캡처 모드일 때는 클릭 무시
+
+    state.activeIdx = idx;
+    const quiz = state.board[idx];
+    const meta = getLocMeta(quiz.loc);
+    
+    document.getElementById('modal-loc-badge').innerText = meta.name;
+    document.getElementById('modal-loc-badge').className = `inline-block px-2.5 py-1 text-[10px] font-extrabold rounded-md ${meta.badge}`;
+    document.getElementById('modal-quiz-num').innerText = `문항 고유번호: Q-${quiz.id}`;
+    document.getElementById('modal-question').innerText = quiz.q;
+    
+    // 이전에 입력했던 값 불러오기
+    const prevAnswer = state.answers[idx] || '';
+    document.getElementById('quiz-answer-input').value = prevAnswer;
+
+    // 상태 박스 세팅
+    const statusBox = document.getElementById('modal-status-box');
+    const submitBtn = document.getElementById('btn-submit');
+    
+    if (state.status[idx] === 'success') {
+        statusBox.className = "p-2.5 rounded-xl text-center text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        statusBox.innerText = `🎉 이미 정답을 맞춘 퀴즈입니다! (입력 답안: ${prevAnswer})`;
+        statusBox.classList.remove('hidden');
+        submitBtn.disabled = true;
+        submitBtn.className = "flex-1 py-3 bg-slate-800 text-slate-500 font-bold rounded-xl text-xs cursor-not-allowed";
+    } else if (state.status[idx] === 'failure') {
+        statusBox.className = "p-2.5 rounded-xl text-center text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        statusBox.innerText = `⚠️ 오답이 제출된 상태입니다. 다시 풀 수 있습니다!`;
+        statusBox.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.className = "flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition-all";
+    } else {
+        statusBox.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.className = "flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl text-xs transition-all";
+    }
+
+    document.getElementById('quiz-modal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('quiz-answer-input').focus();
+    }, 100);
+}
+
+function closeQuizModal() {
+    document.getElementById('quiz-modal').classList.add('hidden');
+    state.activeIdx = null;
+}
+
+// 답안 평가 및 제출 로직
+function submitAnswer() {
+    const idx = state.activeIdx;
+    if (idx === null) return;
+
+    const inputVal = document.getElementById('quiz-answer-input').value.trim();
+    if (!inputVal) {
+        showToast("답안을 입력해주세요!");
+        return;
+    }
+
+    const quiz = state.board[idx];
+    
+    // 스마트 정답 체크 (공백 제거, 대소문자 무시, 슬래시 분할 매칭)
+    const normalizedInput = inputVal.replace(/\s+/g, '').toLowerCase();
+    
+    let isCorrect = false;
+    
+    for (let rawAnswer of quiz.a) {
+        // 복합 정답인 경우 분할하여 개별 비교 지원
+        const parts = rawAnswer.split('/').map(p => p.trim());
+        for (let part of parts) {
+            const normalizedTarget = part.replace(/\s+/g, '').toLowerCase();
+            if (normalizedInput === normalizedTarget || normalizedInput.includes(normalizedTarget) && normalizedTarget.length >= 2) {
+                isCorrect = true;
+                break;
+            }
+        }
+        if (isCorrect) break;
+    }
+
+    // 상태 저장
+    state.answers[idx] = inputVal;
+    state.status[idx] = isCorrect ? 'success' : 'failure';
+
+    renderBoard();
+    updateBingoCount();
+    closeQuizModal();
+
+    if (isCorrect) {
+        showToast("🎯 정답입니다! 한 칸 성공!");
+    } else {
+        showToast("❌ 정답이 아닙니다. 다시 관찰해보세요!");
+    }
+}
+
+// 4x4 빙고 라인 체크 알고리즘
+function updateBingoCount() {
+    let bingos = 0;
+    const grid = [];
+    
+    // 4x4 그리드 매핑
+    for (let i = 0; i < 4; i++) {
+        grid.push([
+            state.status[i*4] === 'success',
+            state.status[i*4 + 1] === 'success',
+            state.status[i*4 + 2] === 'success',
+            state.status[i*4 + 3] === 'success'
+        ]);
+    }
+
+    // 가로 4줄 검사
+    for (let r = 0; r < 4; r++) {
+        if (grid[r][0] && grid[r][1] && grid[r][2] && grid[r][3]) bingos++;
+    }
+
+    // 세로 4줄 검사
+    for (let c = 0; c < 4; c++) {
+        if (grid[0][c] && grid[1][c] && grid[2][c] && grid[3][c]) bingos++;
+    }
+
+    // 대각선 2줄 검사
+    if (grid[0][0] && grid[1][1] && grid[2][2] && grid[3][3]) bingos++;
+    if (grid[0][3] && grid[1][2] && grid[2][1] && grid[3][0]) bingos++;
+
+    const countEl = document.getElementById('bingo-count');
+    countEl.innerText = `🔥 ${bingos} 빙고`;
+
+    if (bingos > 0) {
+        countEl.className = "font-extrabold text-emerald-400 text-sm animate-bounce";
+    } else {
+        countEl.className = "font-extrabold text-amber-400 text-sm";
+    }
+}
+
+// 캡처 최적화 전용 모드 토글
+function toggleCaptureMode() {
+    state.isCaptureMode = !state.isCaptureMode;
+    
+    const body = document.body;
+    const footer = document.getElementById('main-footer');
+    const header = document.getElementById('main-header');
+    const badge = document.getElementById('capture-badge');
+    const btnCapture = document.getElementById('btn-capture');
+
+    if (state.isCaptureMode) {
+        // 캡처 전용 간소화 뷰
+        body.classList.replace('bg-slate-900', 'bg-slate-950');
+        footer.classList.add('hidden');
+        badge.classList.remove('hidden');
+        btnCapture.innerText = "↩️ 일반 모드로 복귀하기";
         
-        <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200 flex justify-between items-center">
-            <div class="flex gap-3">
-                <div class="flex items-center text-[10px] font-bold text-slate-400">
-                    <span class="w-2 h-2 bg-rose-500 rounded-full mr-1.5"></span> 퀴즈
-                </div>
-                <div class="flex items-center text-[10px] font-bold text-slate-400">
-                    <span class="w-2 h-2 bg-sky-500 rounded-full mr-1.5"></span> 활동
-                </div>
-            </div>
-            <p class="text-xs font-bold text-slate-600">완료: <span id="doneCount" class="text-emerald-500">0</span>/16</p>
-        </div>
-    </header>
+        // 캡처를 쉽게 하기 위해 하단에 임시 복귀 바를 띄웁니다.
+        const returnBtn = document.createElement('button');
+        returnBtn.id = 'temp-return-bar';
+        returnBtn.className = "w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs text-center transition-all";
+        returnBtn.innerText = "📸 캡처 완료 후 여기를 탭하면 원래 화면으로 돌아갑니다.";
+        returnBtn.onclick = toggleCaptureMode;
+        body.appendChild(returnBtn);
 
-    <div class="bingo-grid" id="bingoBoard"></div>
+        showToast("화면이 깔끔하게 정리되었습니다. 캡처해 주세요!");
+    } else {
+        // 기존 뷰 복원
+        body.classList.replace('bg-slate-950', 'bg-slate-900');
+        footer.classList.remove('hidden');
+        badge.classList.add('hidden');
+        
+        const returnBar = document.getElementById('temp-return-bar');
+        if (returnBar) returnBar.remove();
 
-    <button onclick="showScreenshot()" class="mt-6 w-full py-4 bg-slate-800 text-white rounded-2xl font-bold shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
-        <span>📸</span> 최종 인증화면 (캡처용)
-    </button>
+        showToast("일반 모드로 돌아왔습니다.");
+    }
+}
 
-    <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl">
-            <div id="modalContent"></div>
-            <button id="modalCloseBtn" onclick="closeModal()" class="mt-4 w-full py-3 bg-slate-50 text-slate-400 rounded-xl font-bold text-xs">나중에 하기</button>
-        </div>
-    </div>
+// 초기화 확인
+function confirmReset() {
+    const ok = confirm("정말로 빙고를 초기화하시겠습니까?\n작성한 학번, 이름과 문제 진행 기록이 모두 지워집니다.");
+    if (ok) {
+        localStorage.clear();
+        location.reload();
+    }
+}
 
-    <div id="screenshotModal">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-8 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-rose-500"></div>
-            <div class="mb-6">
-                <p class="text-blue-600 font-black tracking-widest text-[10px] mb-1">MISSION COMPLETE</p>
-                <h3 id="resultName" class="text-2xl font-black text-slate-800 mb-1">학번 이름</h3>
-                <p class="text-slate-400 text-xs">도림고등학교 현장체험학습</p>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <div class="bg-slate-50 rounded-2xl p-4">
-                    <p class="text-[10px] font-bold text-slate-400 mb-1">빙고 달성</p>
-                    <p id="resultBingo" class="text-3xl font-black text-rose-500">0</p>
-                </div>
-                <div class="bg-slate-50 rounded-2xl p-4">
-                    <p class="text-[10px] font-bold text-slate-400 mb-1">미션 완료</p>
-                    <p id="resultDone" class="text-3xl font-black text-emerald-500">0</p>
-                </div>
-            </div>
+// 모바일 토스트 피드백 알림
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.innerText = message;
+    toast.classList.remove('hidden');
+    
+    // 이전 타이머 지우기
+    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+    
+    window.toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 2500);
+}
 
-            <div class="bg-blue-50 text-blue-700 py-2 px-4 rounded-full inline-block font-bold text-[10px] mb-8">
-                인증 시각: <span id="resultTime"></span>
-            </div>
-
-            <button onclick="closeScreenshot()" class="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm">활동 돌아가기</button>
-            <p class="mt-4 text-[9px] text-slate-300">화면을 캡처하여 선생님께 제출하세요!</p>
-        </div>
-    </div>
-
-    <script>
-        const bingoData = [
-            { id: 1, type: 'quiz', loc: '역사박물관', title: '인천의 별명', q: '인천은 1883년 이곳을 통해 외국의 문물을 가장 먼저 받아들였습니다. 이 행위를 무엇이라 할까요?', a: '개항' },
-            { id: 2, type: 'mission', loc: '센트럴파크', title: '거대 조형물', task: '공원 어딘가에 있는 거대한 토끼 조형물이나 사슴을 찾아 팀원과 사진 찍기!', hint: '사슴 농장 근처를 확인해보세요.' },
-            { id: 3, type: 'quiz', loc: '문자박물관', title: '점토판 문자', q: '메소포타미아 문명에서 점토판에 새겨 썼던 끝이 뾰족한 문자 이름은?', a: '쐐기문자' },
-            { id: 4, type: 'mission', loc: 'G타워', title: '스마트 기술', task: '홍보관에서 신기했던 스마트 시티 기술 하나를 사진 찍고 이유 메모하기!', hint: '무인 관제 시스템 등을 보세요.' },
-            { id: 5, type: 'mission', loc: '역사박물관', title: '옛날 포스터', task: '전시된 옛날 광고지나 포스터 중 가장 재밌는 것 하나를 찍기!', hint: '근대 생활사 코너에 있습니다.' },
-            { id: 6, type: 'quiz', loc: 'G타워', title: '전망대 높이', q: 'G타워 전망대는 건물의 몇 층에 위치해 있을까요? (숫자만)', a: '33' },
-            { id: 7, type: 'mission', loc: '문자박물관', title: '미래 메시지', task: '박물관 내 체험존에서 나만의 문자를 만들어 전송하고 인증샷!', hint: '1층 체험 코너를 확인하세요.' },
-            { id: 8, type: 'quiz', loc: '센트럴파크', title: '공원 디자인', q: '송도 센트럴파크는 뉴욕의 이 공원을 모델로 만들었습니다. 어디일까요?', a: '센트럴파크' },
-            { id: 9, type: 'quiz', loc: '문자박물관', title: '금속활자의 힘', q: '고려 시대에 만들어진 세계 최초의 금속 활자본 이름은?', a: '직지심체요절' },
-            { id: 10, type: 'mission', loc: '역사박물관', title: '도심 속 한옥', task: '역사박물관 창밖에서 보이는 한옥마을의 전경을 예쁘게 촬영하기!', hint: '박물관 위층 창가에서 잘 보입니다.' },
-            { id: 11, type: 'quiz', loc: '센트럴파크', title: '수로의 길이', q: '센트럴파크 해수로는 약 몇 km일까요? (숫자만)', a: '2' },
-            { id: 12, type: 'mission', loc: 'G타워', title: '인천대교 배경', task: '전망대에서 인천대교가 가장 길게 보이는 지점을 찾아 풍경 찍기!', hint: '서해 바다 쪽 통유리를 확인하세요.' },
-            { id: 13, type: 'mission', loc: '센트럴파크', title: '트라이보울 반사', task: '트라이보울 주변 수면에 비친 건물의 반영 사진 찍기!', hint: '물가 주변을 살펴보세요.' },
-            { id: 14, type: 'quiz', loc: '역사박물관', title: '매립의 역사', q: '송도는 바다를 메워 만든 땅입니다. 이 작업을 무엇이라 할까요?', a: '간척' },
-            { id: 15, type: 'quiz', loc: 'G타워', title: '국제기구', q: 'G타워에 입주한 기후 변화 관련 국제기구는 녹색기후○○입니다.', a: '기금' },
-            { id: 16, type: 'mission', loc: '문자박물관', title: '흰색 곡선의 미', task: '박물관 건물의 곡선이 잘 드러나도록 예술적인 각도로 사진 찍기!', hint: '멀리서 바라보는 각도가 좋습니다.' }
-        ];
-
-        let state = JSON.parse(localStorage.getItem('dorim_state_v2')) || Array(16).fill(false);
-        let user = JSON.parse(localStorage.getItem('dorim_user_v2')) || null;
-
-        function startApp() {
-            const name = document.getElementById('userName').value.trim();
-            const classNum = document.getElementById('userClass').value.trim();
-            if(!name || !classNum) {
-                alert("이름과 학번을 모두 입력해주세요!");
-                return;
-            }
-            
-            user = { name, class: classNum };
-            localStorage.setItem('dorim_user_v2', JSON.stringify(user));
-            document.getElementById('loginOverlay').style.display = 'none';
-            render();
-        }
-
-        function render() {
-            if(!user) return;
-            document.getElementById('loginOverlay').style.display = 'none';
-            document.getElementById('displayUser').innerText = `${user.class} ${user.name}`;
-            
-            const board = document.getElementById('bingoBoard');
-            board.innerHTML = '';
-            
-            bingoData.forEach((data, i) => {
-                const isDone = state[i];
-                const cell = document.createElement('div');
-                cell.className = `bingo-cell ${isDone ? 'cell-completed' : ''}`;
-                cell.innerHTML = `
-                    <div class="cell-inner ${isDone ? 'is-flipped' : ''}" onclick="handleClick(${i})">
-                        <div class="cell-front type-${data.type}">
-                            <span class="text-[8px] text-slate-400 mb-0.5 uppercase font-black">${data.loc}</span>
-                            <span class="leading-[1.1] text-center">${data.title}</span>
-                        </div>
-                        <div class="cell-back">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                `;
-                board.appendChild(cell);
-            });
-            updateStats();
-        }
-
-        function handleClick(i) {
-            const data = bingoData[i];
-            const modal = document.getElementById('modal');
-            const content = document.getElementById('modalContent');
-            const isDone = state[i];
-            
-            let html = `<div class="mb-2 px-2 py-1 bg-slate-100 rounded text-[10px] font-bold text-slate-500 inline-block">${data.loc}</div>`;
-            
-            if (isDone) {
-                // 이미 완료된 경우: 수정(초기화) 화면 표시
-                html += `
-                    <h2 class="text-xl font-black text-slate-800 mb-4">${data.title}</h2>
-                    <div class="bg-emerald-50 p-5 rounded-2xl mb-6 text-center">
-                        <p class="text-emerald-700 font-bold mb-1">성공한 미션입니다!</p>
-                        <p class="text-slate-500 text-xs">내용을 수정하거나 다시 수행하려면<br>아래 버튼을 눌러주세요.</p>
-                    </div>
-                    <button onclick="resetMission(${i})" class="w-full py-4 bg-rose-100 text-rose-600 rounded-2xl font-bold active:scale-95 transition-all">미션 초기화 (다시 하기)</button>
-                `;
-            } else {
-                // 아직 완료되지 않은 경우: 퀴즈/활동 화면 표시
-                html += `<h2 class="text-xl font-black text-slate-800 mb-4">${data.title}</h2>`;
-                if(data.type === 'quiz') {
-                    html += `
-                        <div class="bg-slate-50 p-5 rounded-2xl mb-4 text-sm font-medium leading-relaxed">${data.q}</div>
-                        <input type="text" id="ansIn" placeholder="정답 입력" 
-                            class="w-full p-4 border-2 border-slate-100 rounded-2xl text-center font-bold outline-none focus:border-rose-400">
-                        <button onclick="checkAnswer(${i})" class="w-full py-4 bg-rose-500 text-white rounded-2xl font-bold mt-4 shadow-lg shadow-rose-100 active:scale-95 transition-all">정답 확인</button>
-                    `;
-                } else {
-                    html += `
-                        <div class="bg-sky-50 p-5 rounded-2xl mb-4 text-sky-900 text-sm font-medium leading-relaxed">${data.task}</div>
-                        <p class="text-slate-400 text-[11px] italic mb-6 px-1">💡 힌트: ${data.hint}</p>
-                        <button onclick="completeMission(${i})" class="w-full py-4 bg-sky-500 text-white rounded-2xl font-bold shadow-lg shadow-sky-100 active:scale-95 transition-all">미션 완료!</button>
-                    `;
-                }
-            }
-            
-            content.innerHTML = html;
-            modal.style.display = 'flex';
-            if(!isDone && data.type === 'quiz') document.getElementById('ansIn').focus();
-        }
-
-        function checkAnswer(i) {
-            const input = document.getElementById('ansIn');
-            const val = input.value.trim().replace(/\s/g, '');
-            if(val === bingoData[i].a.replace(/\s/g, '')) {
-                completeMission(i);
-            } else {
-                input.classList.add('shake', 'border-rose-400');
-                setTimeout(() => input.classList.remove('shake'), 500);
-            }
-        }
-
-        function completeMission(i) {
-            state[i] = true;
-            saveAndRefresh();
-        }
-
-        function resetMission(i) {
-            if(confirm("이 칸의 활동 기록을 지우고 다시 하시겠습니까?")) {
-                state[i] = false;
-                saveAndRefresh();
-            }
-        }
-
-        function saveAndRefresh() {
-            localStorage.setItem('dorim_state_v2', JSON.stringify(state));
-            closeModal();
-            render();
-        }
-
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-        function updateStats() {
-            const done = state.filter(s => s).length;
-            document.getElementById('doneCount').innerText = done;
-            
-            let bingos = 0;
-            const lines = [[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],[0,5,10,15],[3,6,9,12]];
-            lines.forEach(l => { if(l.every(idx => state[idx])) bingos++; });
-            document.getElementById('bingoCountTop').innerText = bingos;
-        }
-
-        function showScreenshot() {
-            if(!user) return;
-            document.getElementById('resultName').innerText = `${user.class} ${user.name}`;
-            document.getElementById('resultBingo').innerText = document.getElementById('bingoCountTop').innerText;
-            document.getElementById('resultDone').innerText = document.getElementById('doneCount').innerText;
-            document.getElementById('resultTime').innerText = new Date().toLocaleString('ko-KR', { hour12: false });
-            document.getElementById('screenshotModal').style.display = 'flex';
-        }
-
-        function closeScreenshot() { document.getElementById('screenshotModal').style.display = 'none'; }
-
-        window.onload = () => { if(user) render(); };
-    </script>
+// 엔터키 제출 연동
+document.getElementById('quiz-answer-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        submitAnswer();
+    }
+});
+</script>
 </body>
 </html>
